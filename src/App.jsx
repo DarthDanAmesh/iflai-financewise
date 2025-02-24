@@ -96,7 +96,20 @@ export default function App() {
   const [newExpenseAmount, setNewExpenseAmount] = useState(0);
   const [newExpenseCategory, setNewExpenseCategory] = useState('Food');
   const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [categories, setCategories] = useState(['Food', 'Transport', 'Entertainment']); // Initial categories
   const [error, setError] = useState('');
+
+
+  // Load categories from localStorage on initial render
+  useEffect(() => {
+    const savedCategories = JSON.parse(localStorage.getItem('categories')) || ['Food', 'Transport', 'Entertainment'];
+    setCategories(savedCategories);
+  }, []);
+
+  // Save categories to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('categories', JSON.stringify(categories));
+  }, [categories]);
 
   const handleAddExpense = () => {
     if (newExpenseAmount <= 0) {
@@ -107,6 +120,12 @@ export default function App() {
       setError('Category cannot be empty.');
       return;
     }
+  
+    // Add the category to the list if it doesn't already exist
+    if (!categories.includes(newExpenseCategory)) {
+      setCategories((prevCategories) => [...prevCategories, newExpenseCategory]);
+    }
+  
     setError(''); // Clear any previous errors
     addExpense(newExpenseAmount, newExpenseCategory);
   };
@@ -261,54 +280,58 @@ export default function App() {
             </div>
           </div>
         </div>
-  
-        <div className="bg-white rounded-lg p-6 shadow-md">
-          <div className="flex gap-2 mb-4">
-            <input
-              type="number"
-              value={newExpenseAmount}
-              onChange={(e) => setNewExpenseAmount(Number(e.target.value))}
-              className="flex-1 border border-gray-300 rounded-lg p-2"
-              placeholder="Amount"
-            />
-            {isCustomCategory ? (
-              <input
-                type="text"
-                value={newExpenseCategory}
-                onChange={(e) => setNewExpenseCategory(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg p-2"
-                placeholder="Custom Category"
-              />
-            ) : (
-              <select
-                value={newExpenseCategory}
-                onChange={(e) => setNewExpenseCategory(e.target.value)}
-                className="border border-gray-300 rounded-lg p-2"
-              >
-                <option value="Food">Food</option>
-                <option value="Transport">Transport</option>
-                <option value="Entertainment">Entertainment</option>
-              </select>
-            )}
-            <button
-              onClick={() => setIsCustomCategory(!isCustomCategory)}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
-            >
-              {isCustomCategory ? 'Select Category' : 'Custom Category'}
-            </button>
-            <button
-              onClick={handleAddExpense}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Add Expense
-            </button>
-          </div>
 
-          {error && (
-            <div className="text-red-600 text-sm mb-4">
-              {error}
-            </div>
+        {/* Add Expenses */} 
+  
+      <div className="bg-white rounded-lg p-6 shadow-md">
+        <div className="flex gap-2 mb-4">
+          <input
+            type="number"
+            value={newExpenseAmount}
+            onChange={(e) => setNewExpenseAmount(Number(e.target.value))}
+            className="flex-1 border border-gray-300 rounded-lg p-2"
+            placeholder="Amount"
+          />
+          {isCustomCategory ? (
+            <input
+              type="text"
+              value={newExpenseCategory}
+              onChange={(e) => setNewExpenseCategory(e.target.value)}
+              className="flex-1 border border-gray-300 rounded-lg p-2"
+              placeholder="Custom Category"
+            />
+          ) : (
+            <select
+              value={newExpenseCategory}
+              onChange={(e) => setNewExpenseCategory(e.target.value)}
+              className="border border-gray-300 rounded-lg p-2"
+            >
+              {categories.map((category, index) => (
+                <option key={index} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
           )}
+          <button
+            onClick={() => setIsCustomCategory(!isCustomCategory)}
+            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+          >
+            {isCustomCategory ? 'Select Category' : 'Custom Category'}
+          </button>
+          <button
+            onClick={handleAddExpense}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Add Expense
+          </button>
+        </div>
+
+        {error && (
+          <div className="text-red-600 text-sm mb-4">
+            {error}
+          </div>
+        )}
 
 
           {/* Recent Expenses */} 
