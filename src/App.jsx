@@ -95,6 +95,21 @@ export default function App() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [newExpenseAmount, setNewExpenseAmount] = useState(0);
   const [newExpenseCategory, setNewExpenseCategory] = useState('Food');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAddExpense = () => {
+    if (newExpenseAmount <= 0) {
+      setError('Amount must be greater than 0.');
+      return;
+    }
+    if (!newExpenseCategory.trim()) {
+      setError('Category cannot be empty.');
+      return;
+    }
+    setError(''); // Clear any previous errors
+    addExpense(newExpenseAmount, newExpenseCategory);
+  };
 
 
   const handleSectionChange = (newSection) => {
@@ -256,22 +271,47 @@ export default function App() {
               className="flex-1 border border-gray-300 rounded-lg p-2"
               placeholder="Amount"
             />
-            <select
-              value={newExpenseCategory}
-              onChange={(e) => setNewExpenseCategory(e.target.value)}
-              className="border border-gray-300 rounded-lg p-2"
-            >
-              <option value="Food">Food</option>
-              <option value="Transport">Transport</option>
-              <option value="Entertainment">Entertainment</option>
-            </select>
+            {isCustomCategory ? (
+              <input
+                type="text"
+                value={newExpenseCategory}
+                onChange={(e) => setNewExpenseCategory(e.target.value)}
+                className="flex-1 border border-gray-300 rounded-lg p-2"
+                placeholder="Custom Category"
+              />
+            ) : (
+              <select
+                value={newExpenseCategory}
+                onChange={(e) => setNewExpenseCategory(e.target.value)}
+                className="border border-gray-300 rounded-lg p-2"
+              >
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Entertainment">Entertainment</option>
+              </select>
+            )}
             <button
-              onClick={() => addExpense(newExpenseAmount, newExpenseCategory)}
+              onClick={() => setIsCustomCategory(!isCustomCategory)}
+              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+            >
+              {isCustomCategory ? 'Select Category' : 'Custom Category'}
+            </button>
+            <button
+              onClick={handleAddExpense}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
             >
               Add Expense
             </button>
           </div>
+
+          {error && (
+            <div className="text-red-600 text-sm mb-4">
+              {error}
+            </div>
+          )}
+
+
+          {/* Recent Expenses */} 
 
   
           <h3 className="text-xl font-semibold mb-4">Recent Expenses</h3>
