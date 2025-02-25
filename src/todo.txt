@@ -1,0 +1,15 @@
+Better command parsing with natural language understanding
+Visual and audio feedback during interactions
+Follow-up questions for incomplete commands
+More robust error handling
+Support for querying budget and recent expenses via voice
+
+---------------  and ------------------
+Version Updates:
+Recognize when a voice input isn't a command.
+Allow persistent or longer listening mode incase of incomplete commands.
+Structure the voice input for adding expenses (eg. Use format as "Add expense, 100 for fuel" )
+Forward non-command queries to your Ollama API
+Show appropriate loading states during API calls
+Handle the API responses with proper speech synthesis
+Check if the API is available at startup

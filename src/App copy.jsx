@@ -1,11 +1,11 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { openDB } from "idb";
 import { 
   DollarSign, 
   PieChart, 
   BookOpen, 
-  Mic, MicOff,
-  MessageCircle, Send, Image, Paperclip, ArrowLeft, Volume2,
+  Mic, 
+  MessageCircle,
   TrendingUp,
   ShoppingBag,
   Bus,
@@ -20,8 +20,7 @@ import {
   Bell
 } from "lucide-react";
 import './App.css'
-import axios from 'axios';
-import Tesseract from 'tesseract.js';
+
 // Missing Award component for badges
 const Award = ({ className, size }) => (
   <svg 
@@ -48,16 +47,6 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString();
 };
 
-
-{/*START OF THE MODS FOR FINANCE CHAT*/}
-
-// API endpoint
-const API_URL = 'http://127.0.0.1:8080/api/chat';
-
-const FinanceWiseApp = () => {
-  
-}
-{/*END OF THE MODS FOR FINANCE CHAT*/}
 
 const FloatingActionButton = ({ icon, onClick, active, label }) => (
   <button
@@ -170,7 +159,8 @@ export default function App() {
   const [showTutorial, setShowTutorial] = useState(true);
   const [badges, setBadges] = useState([]);
   const [activeSection, setActiveSection] = useState('welcome');
-
+  const [isListening, setIsListening] = useState(false);
+  const [messages, setMessages] = useState([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Expense management state
@@ -188,150 +178,6 @@ export default function App() {
   const [editingExpense, setEditingExpense] = useState(null);
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
 
-
-  const [messages, setMessages] = useState([
-    { type: 'assistant', text: 'Hello! I can help you manage your finances. What would you like to know about today?' }
-  ]);
-  const [inputText, setInputText] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [responseQuality, setResponseQuality] = useState('concise');
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const messageEndRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const chatContainerRef = useRef(null);
-  
-  const recognitionRef = useRef(null);
-  const audioRef = useRef(new Audio());
-
-  // Initialize speech recognition
-  useEffect(() => {
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = false;
-      
-      recognitionRef.current.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript;
-        setInputText(transcript);
-      };
-      
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-    
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
-  
-  // Scroll to bottom of messages
-  useEffect(() => {
-    if (messageEndRef.current) {
-      messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-  
-  
-  
-  const handleSendMessage = async () => {
-    if (!inputText.trim() && !imagePreview) return;
-    
-    // Add user message to chat
-    const userMessage = inputText.trim() || "Image uploaded";
-    setMessages(prev => [...prev, { type: 'user', text: userMessage }]);
-    
-    // Clear input and image preview
-    setInputText('');
-    setImagePreview(null);
-    setIsLoading(true);
-    
-    try {
-      // Prepare messages for API
-      const apiMessages = messages.map(msg => ({
-        role: msg.type === 'user' ? 'user' : 'assistant',
-        content: msg.text
-      }));
-      
-      // Add current message
-      apiMessages.push({
-        role: 'user',
-        content: userMessage
-      });
-      
-      // Make API request
-      const response = await axios.post(API_URL, {
-        messages: apiMessages,
-        role: 'user',
-        preferred_style: responseQuality,
-        continue_conversation: true
-      });
-      
-      // Add assistant response to chat
-      setMessages(prev => [...prev, { 
-        type: 'assistant', 
-        text: response.data.response,
-        ttsResponse: response.data.tts_response 
-      }]);
-      
-      // If voice is enabled, read response aloud
-      if (response.data.voice_suitable) {
-        playResponseAudio(response.data.tts_response);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages(prev => [...prev, { 
-        type: 'assistant', 
-        text: 'Sorry, I encountered an error. Please try again.' 
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // Show image preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
-    
-    // Process image with OCR
-    Tesseract.recognize(
-      file,
-      'eng',
-      { logger: m => console.log(m) }
-    ).then(({ data: { text } }) => {
-      if (text.trim()) {
-        setInputText(text.trim());
-      } else {
-        setMessages(prev => [...prev, { 
-          type: 'assistant', 
-          text: "I couldn't extract any text from that image. You can type your question instead." 
-        }]);
-      }
-    });
-  };
-  
-  const playResponseAudio = (ttsText) => {
-    // Remove SSML tags
-    const text = ttsText.replace(/<[^>]*>/g, '');
-    speak(text);
-  };
-  
-  const handleReplayAudio = (text) => {
-    playResponseAudio(text);
-  };
-  
   const handleSectionChange = (section) => {
     setIsTransitioning(true);
     setTimeout(() => {
@@ -340,42 +186,16 @@ export default function App() {
     }, 300);
   };
 
-  /// Enhanced speech synthesis function
+  // Speech synthesis function (simplified)
   const speak = (text) => {
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-    
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-GB";
-    utterance.rate = 1.0;  // Normal speaking rate
-    utterance.pitch = 1.0; // Normal pitch
-    
-    // Get voices and set preferred voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoices = [
-      "Google UK English Female",
-      "Microsoft Libby Online (Natural)",
-      "Samantha",
-      "Victoria"
-    ];
-    
-    // Try to find one of our preferred voices
-    for (const prefVoice of preferredVoices) {
-      const voice = voices.find(v => v.name === prefVoice);
-      if (voice) {
-        utterance.voice = voice;
-        break;
-      }
+    utterance.lang = "en-GB"; // Set language to UK English
+    const voices = speechSynthesis.getVoices();
+    const googleUKVoice = voices.find(voice => voice.name === "Google UK English Female");
+    if (googleUKVoice) {
+      utterance.voice = googleUKVoice; // Use Google UK English Female voice
     }
-    
-    // Show a visual indicator that the app is speaking
-    setIsSpeaking(true);
-    
-    utterance.onend = () => {
-      setIsSpeaking(false);
-    };
-    
-    window.speechSynthesis.speak(utterance);
+    speechSynthesis.speak(utterance);
   };
 
   // Load categories and expenses from localStorage/IndexedDB on initial render
@@ -580,192 +400,30 @@ export default function App() {
     setQuizIndex((prev) => (prev + 1) % quizQuestions.length);
   };
 
-  // Enhanced voice command handler
   const handleVoiceCommand = () => {
     if (!isListening) {
       setIsListening(true);
-      
+      // Initialize speech recognition here
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      recognitionRef.current = recognition;
-      
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-GB";
-      
-      recognition.onstart = () => {
-        speak("Listening for commands");
-      };
       
       recognition.onresult = (event) => {
         const command = event.results[0][0].transcript.toLowerCase();
-        console.log("Voice command received:", command);
-        
-        // Process the command
-        processVoiceCommand(command);
+        if (command.includes('add expense')) {
+          // Parse amount and category from command
+          // Example: "add expense 20 for food"
+          const match = command.match(/add expense (\d+) for (\w+)/);
+          if (match) {
+            setNewExpenseAmount(Number(match[1]));
+            setNewExpenseCategory(match[2]);
+            handleAddExpense();
+          }
+        }
       };
       
-      recognition.onerror = (event) => {
-        console.error("Speech recognition error", event.error);
-        speak("Sorry, I didn't catch that. Please try again.");
-        setIsListening(false);
-      };
-      
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-      
+      recognition.onend = () => setIsListening(false);
       recognition.start();
-    } else {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
-      speak("Voice commands stopped");
     }
-  };
-
-
-
-  // Process voice commands
-  const processVoiceCommand = (command) => {
-    // Add expense command
-    if (command.includes('add expense') || command.includes('add an expense')) {
-      // Extract amount - look for numbers
-      const amountMatch = command.match(/(\d+(\.\d+)?)/);
-      let amount = null;
-      if (amountMatch) {
-        amount = parseFloat(amountMatch[0]);
-      }
-      
-      // Extract category - common expense categories
-      const categories = ['food', 'groceries', 'rent', 'utilities', 'transport', 'entertainment', 'shopping', 'medical', 'travel'];
-      let category = null;
-      
-      for (const cat of categories) {
-        if (command.includes(cat)) {
-          category = cat;
-          break;
-        }
-      }
-      
-      // If we found both amount and category
-      if (amount && category) {
-        setNewExpenseAmount(amount);
-        setNewExpenseCategory(category);
-        speak(`Adding ${category} expense for $${amount}`);
-        handleAddExpense();
-      } else if (amount) {
-        speak(`What category is the $${amount} expense for?`);
-        setNewExpenseAmount(amount);
-        // Activate follow-up mode
-        listenForCategory();
-      } else if (category) {
-        speak(`How much is the ${category} expense?`);
-        setNewExpenseCategory(category);
-        // Activate follow-up mode
-        listenForAmount();
-      } else {
-        speak("Please specify an amount and category for the expense");
-      }
-    }
-    
-    // Read budget command
-    else if (command.includes('what is my budget') || command.includes('check budget') || command.includes('budget remaining')) {
-      speak(`Your remaining budget is $${budget.toFixed(2)}`);
-    }
-    
-    // Read recent expenses command
-    else if (command.includes('recent expenses') || command.includes('last expenses')) {
-      if (expenses.length > 0) {
-        const recentExpenses = expenses.slice(-3); // Get last 3 expenses
-        speak(`Your most recent expenses are: ${recentExpenses.map(exp => 
-          `$${exp.amount} for ${exp.category}`).join(', ')}`);
-      } else {
-        speak("You don't have any expenses recorded yet");
-      }
-    }
-    
-    // Help command
-    else if (command.includes('help') || command.includes('what can you do')) {
-      speak("You can say: add expense, check budget, or recent expenses");
-    }
-    
-    // Unknown command
-    else {
-      speak("Sorry, I didn't understand that command. Try saying add expense, check budget, or recent expenses");
-    }
-  };
-
-  // Listen for category after amount is provided
-  const listenForCategory = () => {
-    setIsListening(true);
-    
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    
-    recognition.onresult = (event) => {
-      const result = event.results[0][0].transcript.toLowerCase();
-      // Filter out common words to extract just the category
-      const words = result.split(' ');
-      let category = result;
-      
-      if (words.length > 1) {
-        // Try to extract just the category name
-        const filteredWords = words.filter(word => 
-          !['the', 'a', 'an', 'for', 'is', 'my', 'it', 'was'].includes(word));
-        if (filteredWords.length > 0) {
-          category = filteredWords[0];
-        }
-      }
-      
-      setNewExpenseCategory(category);
-      speak(`Adding ${category} expense for $${newExpenseAmount}`);
-      handleAddExpense();
-    };
-    
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-    
-    recognition.start();
-  };
-
-  // Listen for amount after category is provided
-  const listenForAmount = () => {
-    setIsListening(true);
-    
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    
-    recognition.onresult = (event) => {
-      const result = event.results[0][0].transcript.toLowerCase();
-      // Try to extract just the number
-      const amountMatch = result.match(/(\d+(\.\d+)?)/);
-      
-      if (amountMatch) {
-        const amount = parseFloat(amountMatch[0]);
-        setNewExpenseAmount(amount);
-        speak(`Adding ${newExpenseCategory} expense for $${amount}`);
-        handleAddExpense();
-      } else {
-        speak("Sorry, I couldn't understand the amount. Please try again.");
-      }
-    };
-    
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-    
-    recognition.start();
   };
 
   const budgetSection = (
@@ -1135,29 +793,9 @@ export default function App() {
     </div>
   );
 
-
-
-  // Chat interface
   const chatSection = (
-    <div className="bg-white rounded-lg p-4 shadow-md h-[calc(100vh-200px)] flex flex-col">
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-gray-700">Financial Assistant</h3>
-          <div className="flex space-x-2">
-            <select 
-              className="text-sm border rounded p-1 bg-gray-50"
-              value={responseQuality}
-              onChange={(e) => setResponseQuality(e.target.value)}
-            >
-              <option value="concise">Concise</option>
-              <option value="detailed">Detailed</option>
-              <option value="factual">Factual</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto mb-4 space-y-4 p-2">
+    <div className="bg-white rounded-lg p-6 shadow-md h-[calc(100vh-200px)] flex flex-col">
+      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -1167,94 +805,22 @@ export default function App() {
                 : 'bg-gray-100'
             }`}
           >
-            <div className="flex flex-col">
-              <span>{msg.text}</span>
-              {msg.type === 'assistant' && msg.ttsResponse && (
-                <button 
-                  onClick={() => handleReplayAudio(msg.ttsResponse)}
-                  className="self-end mt-1 text-blue-600 hover:text-blue-800"
-                  aria-label="Play audio response"
-                >
-                  <Volume2 size={16} />
-                </button>
-              )}
-            </div>
+            {msg.text}
           </div>
         ))}
-        {isLoading && (
-          <div className="bg-gray-100 p-3 rounded-lg max-w-[80%]">
-            <div className="flex space-x-2">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            </div>
-          </div>
-        )}
-        <div ref={messageEndRef} />
       </div>
-      
-      {imagePreview && (
-        <div className="relative mb-2 max-w-xs">
-          <img src={imagePreview} alt="Preview" className="rounded-lg border max-h-24 object-contain" />
-          <button 
-            onClick={() => setImagePreview(null)}
-            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
-          >
-            &times;
-          </button>
-        </div>
-      )}
-      
-      <div className="flex gap-2 items-center">
-        <button 
-          onClick={() => fileInputRef.current.click()}
-          className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-          aria-label="Upload image"
-        >
-          <Image size={20} />
-        </button>
-        <input 
-          ref={fileInputRef}
-          type="file" 
-          accept="image/*" 
-          className="hidden" 
-          onChange={handleImageUpload}
-        />
-        
+      <div className="flex gap-2">
         <input
           type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
           placeholder="Ask about your finances..."
           className="flex-1 border border-gray-300 rounded-lg p-3"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              setMessages([...messages, { type: 'user', text: e.target.value }]);
+              e.target.value = '';
             }
           }}
         />
-        
-        <button 
-          onClick={handleVoiceCommand}
-          className={`p-2 ${isListening ? 'text-red-500' : 'text-gray-500'} hover:bg-gray-100 rounded-full`}
-          aria-label={isListening ? 'Stop recording' : 'Start recording'}
-        >
-          {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-        </button>
-        
-        <button 
-          onClick={handleSendMessage}
-          disabled={!inputText.trim() && !imagePreview}
-          className={`p-2 rounded-full ${
-            !inputText.trim() && !imagePreview 
-              ? 'text-gray-400 bg-gray-100' 
-              : 'text-white bg-blue-600 hover:bg-blue-700'
-          }`}
-          aria-label="Send message"
-        >
-          <Send size={20} />
-        </button>
       </div>
     </div>
   );
@@ -1339,37 +905,25 @@ export default function App() {
         )}
       </main>
       
-      {/* Floating Action Button for Voice Commands with status indicator */}
+      {/* Floating Action Button for Voice Commands */}
       {activeSection !== 'welcome' && (
         <div className="fixed bottom-8 right-8 z-10">
-          <div className="relative">
-            <FloatingActionButton
-              icon={isListening ? <MicOff size={24} /> : <Mic size={24} />}
-              onClick={handleVoiceCommand}
-              active={isListening}
-              label={isListening ? "Listening..." : "Voice command"}
-              className={`${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500'} shadow-lg`}
-            />
-            {isListening && (
-              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-4 py-1 rounded-full text-sm whitespace-nowrap">
-                Listening...
-              </div>
-            )}
-            {isSpeaking && (
-              <div className="absolute -top-8 right-12 bg-blue-500 rounded-full h-3 w-3 animate-ping"></div>
-            )}
-          </div>
+          <FloatingActionButton
+            icon={<Mic size={24} className={isListening ? 'animate-pulse' : ''} />}
+            onClick={handleVoiceCommand}
+            active={isListening}
+            label="Voice command"
+          />
         </div>
       )}
       
-      
       {/* Tutorial Overlay */}
       {showTutorial && (
-        <div className="fixed inset-0 bg-white bg-opacity-50 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-white bg-opacity-70 z-50 flex items-center justify-center">
           <div className="bg-white border border-gray-300 rounded-xl p-8 max-w-lg mx-4">
             <h3 className="text-2xl font-bold mb-4">Welcome to FinanceWise!</h3>
             <p className="mb-6">
-              This app will help you manage your finances, track expenses, learn financial concepts, and get personalized advice.
+              This app will help you manage your finances, track expenses, learn financial concepts, and more.
             </p>
             
             <div className="space-y-4 mb-6">
@@ -1399,7 +953,7 @@ export default function App() {
                 </div>
                 <div>
                   <h4 className="font-medium">Finance Chat</h4>
-                  <p className="text-sm text-gray-600">Ask questions and get personalized advice</p>
+                  <p className="text-sm text-gray-600">Get answers to your money questions</p>
                 </div>
               </div>
             </div>
@@ -1415,4 +969,4 @@ export default function App() {
       )}
     </div>
   );
-};
+}
