@@ -52,7 +52,7 @@ const formatDate = (dateString) => {
 {/*START OF THE MODS FOR FINANCE CHAT*/}
 
 // API endpoint
-const API_URL = 'http://13.51.161.26:80/api/chat';
+const API_URL = 'http://13.51.161.26:8000/api/chat';
 
 const FinanceWiseApp = () => {
   
