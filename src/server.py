@@ -131,7 +131,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-OLLAMA_API_URL = "http://localhost:11434/api/generate"
+OLLAMA_API_URL = "http://13.51.161.26:11434/api/generate"
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
@@ -198,7 +198,7 @@ async def chat(request: ChatRequest):
 async def health_check():
     try:
         async with httpx.AsyncClient(timeout=1.0) as client:
-            response = await client.get("http://localhost:11434/api/tags")
+            response = await client.get("http://13.51.161.26:11434/api/tags")
             if response.status_code == 200:
                 return {"status": "healthy", "ollama": "connected", "models": response.json()}
     except Exception:
@@ -207,4 +207,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     logger.info("Starting FastAPI server")
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
