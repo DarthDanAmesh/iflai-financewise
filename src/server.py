@@ -133,7 +133,7 @@ app.add_middleware(
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 
-@app.get("/api/chat")
+@app.post("/api/chat")
 async def chat(request: ChatRequest):
     try:
         latest_message = request.messages[-1].content
@@ -198,7 +198,7 @@ async def chat(request: ChatRequest):
 async def health_check():
     try:
         async with httpx.AsyncClient(timeout=1.0) as client:
-            response = await client.get("http://localhost:11434/api/tags")
+            response = await client.get("http://13.51.161.26:11434/api/tags")
             if response.status_code == 200:
                 return {"status": "healthy", "ollama": "connected", "models": response.json()}
     except Exception:
