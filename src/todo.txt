@@ -13,3 +13,8 @@ Forward non-command queries to your Ollama API
 Show appropriate loading states during API calls
 Handle the API responses with proper speech synthesis
 Check if the API is available at startup
+
+
+Server: Allow only from : http://localhost:5173/
+USE Multi-media supported models that support image OCR, etc
+Front: USE "tesseract.js": "^6.0.0", for OCR Images.
