@@ -133,7 +133,7 @@ app.add_middleware(
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 
-@app.post("/api/chat")
+@app.get("/api/chat")
 async def chat(request: ChatRequest):
     try:
         latest_message = request.messages[-1].content
